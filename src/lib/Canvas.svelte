@@ -1,71 +1,86 @@
+<script module lang="ts">
+  export type ReceiveCtx = (ctx: WebGL2RenderingContext) => void
+  export interface Point {
+    x: number,
+    y: number,
+  }
+  export type ReceiveMouseDown = (pos: Point) => void
+  export type ReceiveMouseUp = (pos: Point) => void
+  export type ReceiveMouseMove = (pos: Point) => void
+  export type ReceiveMouseLeave = (pos: Point) => void
+  export interface CanvasProps {
+    width: number,
+    height: number,
+    receiveCtx?: ReceiveCtx
+    receiveMouseDown?: ReceiveMouseDown
+    receiveMouseUp?: ReceiveMouseUp
+    receiveMouseMove?: ReceiveMouseMove
+    receiveMouseLeave?: ReceiveMouseLeave
+  }
+</script>
+
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import { assert } from './assert'
   import type { MouseEventHandler, TouchEventHandler } from 'svelte/elements';
 
-	let { width, height } = $props()
+	let {
+    width,
+    height,
+    receiveCtx = () => {},
+    receiveMouseDown = () => {},
+    receiveMouseUp = () => {},
+    receiveMouseMove = () => {},
+    receiveMouseLeave = () => {},
+  }: CanvasProps = $props()
 	
-	let color = '#333'
-	let background = '#fff'
+	const background = '#fff'
 	
 	let canvas = $state<HTMLCanvasElement|null>()
-	let ctx = $state<CanvasRenderingContext2D|null>()
-	let isDrawing = $state(false)
-	let start = { x: 0, y: 0}
+	let ctx = $state<WebGL2RenderingContext|null>()
+	const pos: Point = { x: 0, y: 0}
 	
 	let t = $state(0)
 	let l = $state(0)
 	
 	onMount(() => {
 		assert(canvas)
-		ctx = canvas.getContext('2d')
+		ctx = canvas.getContext('webgl2')
 		assert(ctx)
-		ctx.lineWidth = 3
-		
-		handleSize()
-	})
-	
-	$effect(() => {
-		if(ctx) {
-			ctx.strokeStyle = color
-		}
-	})
-	
-	const handleStart = (({ x, y }: { x: number, y: number }) => { 
-		assert(ctx)
-		if(color === background) {
-			ctx.clearRect(0, 0, width, height)
-		} else {
-			isDrawing = true
-			start = { x, y }
-		}
+    receiveCtx?.(ctx)
 	})
 
-	const handleMouseDown: MouseEventHandler<HTMLCanvasElement> = ({ offsetX: x, offsetY: y }) => {
-		return handleStart({ x, y })
-	}
-	const handleTouch: TouchEventHandler<HTMLCanvasElement> = ({ touches }: TouchEvent) => {
-    const { clientX, clientY } = touches[0]
-    handleMove({
-      offsetX: clientX - l,
-      offsetY: clientY - t
-    })
-	}
+  // avoid heap allocation of new object, to reduce GC (would result in choppy framerate)
+  const setPos = (x: number, y: number): Point => {
+    pos.x = x
+    pos.y = y
+    return pos
+  }
+
+  const handleMouseUp: MouseEventHandler<HTMLCanvasElement> = ({ offsetX: x, offsetY: y }) =>
+    receiveMouseUp(setPos(x, y))
+
+  const handleMouseLeave: MouseEventHandler<HTMLCanvasElement> = ({ offsetX: x, offsetY: y }) =>
+    receiveMouseLeave(setPos(x, y))
+
+	const handleMouseDown: MouseEventHandler<HTMLCanvasElement> = ({ offsetX: x, offsetY: y }) =>
+    receiveMouseDown(setPos(x, y))
+
+	const handleMouseMove: MouseEventHandler<HTMLCanvasElement> = ({ offsetX: x, offsetY: y }) =>
+    receiveMouseMove(setPos(x, y))
+  
+  // ontouchstart, ontouchend, ontouchmove probably need some thought.
+	// const handleTouch: TouchEventHandler<HTMLCanvasElement> = ({ touches }: TouchEvent) => {
+  //   const [touch, ..._] = touches
+  //   const { clientX, clientY } = touch
+  //   handleMove(clientX - l, clientY - t)
+	// }
 	
-	const handleEnd = () => { isDrawing = false }
-	const handleMove = (({ offsetX: x1, offsetY: y1 }: { offsetX: number, offsetY: number }) => {
-		assert(ctx)
-		if(!isDrawing) return
-		
-		const { x, y } = start
-		ctx.beginPath()
-		ctx.moveTo(x, y)
-		ctx.lineTo(x1, y1)
-		ctx.closePath()
-		ctx.stroke()
-		
-		start = { x: x1, y: y1 }
-	})
+	// const handleTouchEnd: TouchEventHandler<HTMLCanvasElement> = ({ touches }: TouchEvent) => {
+  //   if (!touches.length) {
+
+  //   }
+  // }
 	
 	const handleSize = () => {
 		assert(canvas)
@@ -83,10 +98,7 @@
   style:background
   bind:this={canvas}
   onmousedown={handleMouseDown}
-  ontouchstart={handleTouch}
-  onmouseup={handleEnd}
-  ontouchend={handleEnd}
-  onmouseleave={handleEnd}
-  onmousemove={handleMove}
-  ontouchmove={handleTouch}
+  onmouseup={handleMouseUp}
+  onmouseleave={handleMouseLeave}
+  onmousemove={handleMouseMove}
 ></canvas>
