@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import { assert } from './assert'
-    import type { MouseEventHandler, TouchEventHandler } from 'svelte/elements';
+  import type { MouseEventHandler, TouchEventHandler } from 'svelte/elements';
 
 	let { width, height } = $props()
 	
@@ -45,11 +45,11 @@
 		return handleStart({ x, y })
 	}
 	const handleTouch: TouchEventHandler<HTMLCanvasElement> = ({ touches }: TouchEvent) => {
-        const { clientX, clientY } = touches[0]
-        handleMove({
-            offsetX: clientX - l,
-            offsetY: clientY - t
-        })
+    const { clientX, clientY } = touches[0]
+    handleMove({
+      offsetX: clientX - l,
+      offsetY: clientY - t
+    })
 	}
 	
 	const handleEnd = () => { isDrawing = false }
@@ -78,15 +78,15 @@
 <svelte:window on:resize={handleSize} />
 
 <canvas
-    {width}
-    {height}
-    style:background
-    bind:this={canvas}
-    onmousedown={handleMouseDown}
-    ontouchstart={handleTouch}
-    onmouseup={handleEnd}
-    ontouchend={handleEnd}
-    onmouseleave={handleEnd}
-    onmousemove={handleMove}
-    ontouchmove={handleTouch}
+  {width}
+  {height}
+  style:background
+  bind:this={canvas}
+  onmousedown={handleMouseDown}
+  ontouchstart={handleTouch}
+  onmouseup={handleEnd}
+  ontouchend={handleEnd}
+  onmouseleave={handleEnd}
+  onmousemove={handleMove}
+  ontouchmove={handleTouch}
 ></canvas>
