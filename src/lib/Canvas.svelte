@@ -8,7 +8,7 @@
 	let color = '#333'
 	let background = '#fff'
 	
-	let canvas = $state<HTMLCanvasElement>()
+	let canvas = $state<HTMLCanvasElement|null>()
 	let ctx = $state<CanvasRenderingContext2D|null>()
 	let isDrawing = $state(false)
 	let start = { x: 0, y: 0}
@@ -77,16 +77,16 @@
 
 <svelte:window on:resize={handleSize} />
 
-<canvas>
+<canvas
     {width}
     {height}
     style:background
-    bind:this={canvas} 
-    on:mousedown={handleMouseDown}	
-    on:touchstart={handleTouch}	
-    on:mouseup={handleEnd}				
-    on:touchend={handleEnd}				
-    on:mouseleave={handleEnd}
-    on:mousemove={handleMove}
-    on:touchmove={handleTouch}
-</canvas>
+    bind:this={canvas}
+    onmousedown={handleMouseDown}
+    ontouchstart={handleTouch}
+    onmouseup={handleEnd}
+    ontouchend={handleEnd}
+    onmouseleave={handleEnd}
+    onmousemove={handleMove}
+    ontouchmove={handleTouch}
+></canvas>
